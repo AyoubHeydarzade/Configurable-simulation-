@@ -23,8 +23,12 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from .behavior import Behavior, dist_cv, dist_mean, make_rng
-from .config_model import LineStructure
+try:
+    from .behavior import Behavior, dist_cv, dist_mean, make_rng
+    from .config_model import LineStructure
+except ImportError:  # files placed side by side without the line_sim folder
+    from behavior import Behavior, dist_cv, dist_mean, make_rng
+    from config_model import LineStructure
 
 DETECTION_COLUMNS = ["sensor", "bin", "station", "component", "t", "kind", "parts", "delta_g", "level_g"]
 

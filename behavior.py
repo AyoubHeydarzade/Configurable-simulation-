@@ -19,7 +19,10 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from .config_model import LineStructure, Report
+try:
+    from .config_model import LineStructure, Report
+except ImportError:  # files placed side by side without the line_sim folder
+    from config_model import LineStructure, Report
 
 DEFAULTS = {
     "simulation": {"horizon_s": 3600.0, "warmup_s": 300.0, "seed": 42},

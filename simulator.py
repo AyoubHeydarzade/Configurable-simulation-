@@ -35,8 +35,12 @@ from typing import Callable, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from .behavior import Behavior, make_rng, sample, theoretical_capacity
-from .config_model import ConfigError, LineStructure, validate
+try:
+    from .behavior import Behavior, make_rng, sample, theoretical_capacity
+    from .config_model import ConfigError, LineStructure, validate
+except ImportError:  # files placed side by side without the line_sim folder
+    from behavior import Behavior, make_rng, sample, theoretical_capacity
+    from config_model import ConfigError, LineStructure, validate
 
 STATES = ["busy", "wait_material", "down", "wait_operator", "blocked", "starved"]
 STATE_LABELS = {

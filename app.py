@@ -31,13 +31,19 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:  # make `line_sim` importable however the app is launched
     sys.path.insert(0, str(ROOT))
 
-from line_sim import behavior as bh  # noqa: E402
-from line_sim import config_model as cm  # noqa: E402
-from line_sim import sensing as sn  # noqa: E402
-from line_sim.simulator import STATE_COLORS, STATE_LABELS, STATES, LineSimulator, compare_scenarios  # noqa: E402
+if (ROOT / "line_sim").is_dir():  # normal layout: line_sim/ and configs/ folders next to app.py
+    from line_sim import behavior as bh  # noqa: E402
+    from line_sim import config_model as cm  # noqa: E402
+    from line_sim import sensing as sn  # noqa: E402
+    from line_sim.simulator import STATE_COLORS, STATE_LABELS, STATES, LineSimulator, compare_scenarios  # noqa: E402
+else:  # flat layout: every file uploaded into one folder
+    import behavior as bh  # noqa: E402
+    import config_model as cm  # noqa: E402
+    import sensing as sn  # noqa: E402
+    from simulator import STATE_COLORS, STATE_LABELS, STATES, LineSimulator, compare_scenarios  # noqa: E402
 
-CONFIG_DIR = ROOT / "configs"
-VARIANT_DIR = CONFIG_DIR / "variants"
+CONFIG_DIR = ROOT / "configs" if (ROOT / "configs" / "line_config.yaml").exists() else ROOT
+VARIANT_DIR = CONFIG_DIR / "variants" if (CONFIG_DIR / "variants").is_dir() else CONFIG_DIR
 WORKING = "(working configuration)"
 
 st.set_page_config(page_title="Reconfigurable Assembly Line - Twin & Simulator", page_icon="🏭", layout="wide")
@@ -69,13 +75,15 @@ ss = st.session_state
 
 def load_file_scenarios() -> dict:
     out = {"baseline": cm.load_yaml_file(CONFIG_DIR / "line_config.yaml")}
-    if VARIANT_DIR.exists():
-        for p in sorted(VARIANT_DIR.glob("*.y*ml")):
-            try:
-                cfg = cm.load_yaml_file(p)
-            except Exception as exc:  # pragma: no cover
-                st.warning(f"Could not read {p.name}: {exc}")
-                continue
+    for p in sorted(VARIANT_DIR.glob("*.y*ml")):
+        if p.name == "line_config.yaml":
+            continue
+        try:
+            cfg = cm.load_yaml_file(p)
+        except Exception as exc:  # pragma: no cover
+            st.warning(f"Could not read {p.name}: {exc}")
+            continue
+        if "stations" in cfg and "routing" in cfg:  # structure files only (skips data files)
             out[str((cfg.get("line") or {}).get("version") or p.stem)] = cfg
     return out
 
