@@ -1,0 +1,139 @@
+# =============================================================================
+#  line_data.yaml  -  BEHAVIOUR of the line (times, distributions, measurements)
+# -----------------------------------------------------------------------------
+#  Everything here is keyed by object ID (process, operator, station,
+#  component) - never by position in the line. So when the structure in
+#  line_config.yaml is reconfigured, this file stays valid: a process that
+#  moves to another station takes its own time distribution with it.
+#  Missing entries fall back to the "default" entry of their section.
+#
+#  Distribution syntax (used for process times, repair times, lead times):
+#    {dist: lognormal,  mean: 20, cv: 0.2}
+#    {dist: normal,     mean: 20, cv: 0.2}        (truncated at 5% of mean)
+#    {dist: gamma,      mean: 20, cv: 0.3}
+#    {dist: exponential, mean: 120}
+#    {dist: triangular, min: 15, mode: 20, max: 30}
+#    {dist: uniform,    min: 15, max: 25}
+#    {dist: constant,   value: 20}
+#    {dist: empirical,  samples: [19.2, 21.0, 20.4, ...]}   e.g. measured
+# =============================================================================
+
+simulation:
+  horizon_s: 3600          # simulated time per run
+  warmup_s: 300            # excluded from KPIs (line starts empty)
+  seed: 42
+
+# Cycle-time distribution of each PROCESS (seconds, at an operator speed of 1.0)
+process_times:
+  default: {dist: lognormal, mean: 20.0, cv: 0.20}
+  P1: {dist: lognormal, mean: 22.0, cv: 0.25}
+  P2: {dist: lognormal, mean: 18.0, cv: 0.20}
+  P3: {dist: lognormal, mean: 10.0, cv: 0.30}
+  P4: {dist: lognormal, mean: 25.0, cv: 0.30}
+  P5: {dist: lognormal, mean: 20.0, cv: 0.18}
+  P6: {dist: lognormal, mean: 15.0, cv: 0.15}
+  P7: {dist: lognormal, mean: 12.0, cv: 0.15}
+
+# Component picks happen during the first `pick_window` fraction of a process
+# (first pick at the very start, the rest evenly spread), the remaining time is
+# assembly work.
+pick_window: 0.6
+
+# Probability that a process introduces a defect (first-pass-yield model)
+defect_probability:
+  default: 0.0
+  P1: 0.002
+  P2: 0.002
+  P3: 0.003
+  P4: 0.004
+  P5: 0.003
+  P6: 0.001
+  P7: 0.001
+
+# Operator variability: speed_factor multiplies process times (1.10 = 10% slower),
+# cv_factor multiplies the process-time CV.
+operators:
+  default: {speed_factor: 1.0, cv_factor: 1.0}
+  O4: {speed_factor: 1.05, cv_factor: 1.10}
+
+# Reliability per STATION (fixture / tooling). Failures are counted in busy time
+# and occur between units. mtbf_s: null = never fails.
+failures:
+  default: {mtbf_s: null}
+  S3: {mtbf_s: 5400, repair_time: {dist: exponential, mean: 180}}
+  S4: {mtbf_s: 7200, repair_time: {dist: exponential, mean: 120}}
+
+# Unit weight of each component - what a load cell "sees" when one part is picked
+components:
+  default: {unit_weight_g: 10.0}
+  C01: {unit_weight_g: 120.0}
+  C02: {unit_weight_g: 45.0}
+  C03: {unit_weight_g: 2.0}
+  C04: {unit_weight_g: 60.0}
+  C05: {unit_weight_g: 1.5}
+  C06: {unit_weight_g: 3.0}
+  C07: {unit_weight_g: 180.0}
+  C08: {unit_weight_g: 15.0}
+  C09: {unit_weight_g: 4.0}
+  C10: {unit_weight_g: 22.0}
+  C11: {unit_weight_g: 35.0}
+  C12: {unit_weight_g: 25.0}
+  C13: {unit_weight_g: 1.0}
+  C14: {unit_weight_g: 90.0}
+  C15: {unit_weight_g: 3.0}
+  C16: {unit_weight_g: 150.0}
+  C17: {unit_weight_g: 20.0}
+  C18: {unit_weight_g: 5.0}
+  C19: {unit_weight_g: 6.0}
+  C20: {unit_weight_g: 5.0}
+  C21: {unit_weight_g: 24.0}
+  C22: {unit_weight_g: 3.0}
+
+# Bin stocking per COMPONENT: full capacity, reorder point, empty-bin (tare) weight
+bins:
+  default: {capacity_units: 40, reorder_point_units: 8, tare_g: 350.0}
+  C01: {capacity_units: 20, reorder_point_units: 5}
+  C02: {capacity_units: 50, reorder_point_units: 12}
+  C03: {capacity_units: 400, reorder_point_units: 80}
+  C04: {capacity_units: 30, reorder_point_units: 8}
+  C05: {capacity_units: 500, reorder_point_units: 100}
+  C06: {capacity_units: 200, reorder_point_units: 40}
+  C07: {capacity_units: 12, reorder_point_units: 5}
+  C08: {capacity_units: 60, reorder_point_units: 15}
+  C09: {capacity_units: 150, reorder_point_units: 30}
+  C10: {capacity_units: 60, reorder_point_units: 15}
+  C11: {capacity_units: 40, reorder_point_units: 10}
+  C12: {capacity_units: 50, reorder_point_units: 12}
+  C13: {capacity_units: 500, reorder_point_units: 100}
+  C14: {capacity_units: 25, reorder_point_units: 6}
+  C15: {capacity_units: 400, reorder_point_units: 80}
+  C16: {capacity_units: 15, reorder_point_units: 4}
+  C17: {capacity_units: 80, reorder_point_units: 20}
+  C18: {capacity_units: 150, reorder_point_units: 30}
+  C19: {capacity_units: 150, reorder_point_units: 30}
+
+# Material handler: time from "bin reached reorder point" to "bin refilled"
+replenishment:
+  lead_time: {dist: triangular, min: 60, mode: 120, max: 240}
+
+# Load-cell characteristics (used to synthesise raw signals from the simulation)
+load_cells:
+  sample_rate_hz: 1.0
+  noise_sd_g: 0.3
+  drift_g_per_h: 0.0
+  resolution_g: 0.1
+  spike_prob: 0.003        # probability per sample of a hand-contact spike
+  spike_g: 25.0
+
+# Camera characteristics
+camera:
+  dropout: 0.10            # probability that an action has no usable frame
+  confidence_a: 8.0        # Beta(a, b) action-recognition confidence
+  confidence_b: 2.0
+
+# Phase 2 pick detection (load-cell weight drop -> discrete pick event)
+pick_detection:
+  threshold_fraction: 0.5  # a change must exceed 0.5 x one part weight ...
+  noise_k_sigma: 4.0       # ... and 4 x the noise standard deviation
+  persistence_samples: 2   # new level must hold for 2 samples (rejects spikes)
+  match_tolerance_s: 3.0   # when scoring detections against ground truth
